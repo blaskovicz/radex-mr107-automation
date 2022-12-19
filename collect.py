@@ -169,8 +169,8 @@ def process_new_data(data_dir):
 
 
 def main():
-    # data_dir = download_new_data()
-    data_dir = 'C:\\Users\\zacau\\Documents\\mr107-radon-measurements'
+    data_dir = download_new_data()
+    # data_dir = 'C:\\Users\\zacau\\Documents\\mr107-radon-measurements'
     process_new_data(data_dir)
 
 
