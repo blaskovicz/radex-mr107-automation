@@ -34,6 +34,8 @@ def click(win, x, y, times=1):
 
 
 def download_new_data():
+    file_dir = None
+
     try:
         # spawn the app
         app = Application(backend='uia').start(
@@ -43,7 +45,7 @@ def download_new_data():
         main_win = app['Please connect the device']
 
         # wait for radex dc to boot
-        sleep(5)
+        sleep(2)
         # main_win.wait('ready', timeout=15) # this never worked, idk why
 
         # select first device
@@ -55,7 +57,7 @@ def download_new_data():
               main_rect.top + title_rect.height() + 40, 2)
 
         # wait for device options dialog to appear
-        sleep(5)
+        sleep(2)
 
         # click on download
         main_win = app.Dialog
@@ -64,13 +66,13 @@ def download_new_data():
         click(main_win, main_rect.left + 200, main_rect.top + 200)
 
         # wait for download dialog to process data from device
-        sleep(15)
+        sleep(10)
 
         # click on save
         click(main_win, main_rect.left + 200 - 100, main_rect.top + 200 + 70)
 
         # wait for save dialog to appear
-        sleep(5)
+        sleep(2)
 
         # save file from save as dialog as a csv in default folder
         # eg: "uia_controls.ToolbarWrapper - 'Address: C:\\Users\\zacau\\Documents\\mr107-radon-measurements', Toolbar"
@@ -89,18 +91,25 @@ def download_new_data():
         print(f"downloaded data to {file_full}")
 
         # wait for save dialog to finish
-        sleep(5)
+        sleep(2)
 
         # finish up and close
         main_win.Close.click()
-        app.wait_for_process_exit()
+        # app.wait_for_process_exit()
 
-        return file_dir
     except Exception as e:
         print(e)
         main_win.Close.click()
 
-    return None
+    return file_dir
+
+
+def clean_float(raw_float):
+    # due to sensor accuracy, field values may have a '< ' in front of them
+    # (eg: '< 0.8') so try to handle this
+    while len(raw_float) != 0 and not raw_float[0].isdigit():
+        raw_float = raw_float[1:]
+    return float(raw_float)
 
 
 def parse_csv(file_path):
@@ -124,8 +133,13 @@ def parse_csv(file_path):
             t = datetime.strptime(
                 start_date + 'T' + start_time, '%Y.%m.%dT%H:%M')
 
-            p = Point("mr107-stats").tag("room", "basement").tag("series", ser).field(
-                "temperature", float(temp)).field("humidity", float(humid)).field("radon", float(rn)).time(t)
+            p = Point("mr107-measurements").\
+                tag("room", "basement").\
+                tag("series", ser).\
+                field("temperature", clean_float(temp)).\
+                field("humidity", clean_float(humid)).\
+                field("radon", clean_float(rn)).\
+                time(t)
 
             points.append(p)
 
