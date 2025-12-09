@@ -77,7 +77,11 @@ def download_new_data():
         # save file from save as dialog as a csv in default folder
         # eg: "uia_controls.ToolbarWrapper - 'Address: C:\\Users\\zacau\\Documents\\mr107-radon-measurements', Toolbar"
         file_dir = f"{main_win.ToolBar5.wrapper_object()}"
-        file_dir = file_dir.split("'")[1].split("Address: ")[1]
+        print(f"file dir = {file_dir}")
+        if "Address: " not in file_dir:
+            print(f"Address not in {file_dir}, using override")
+            file_dir = "uia_controls.ToolbarWrapper - 'Address: C:\\Users\\zacau\\Documents\\mr107-radon-measurements', Toolbar"
+        file_dir = file_dir.split("Address: ")[1].replace("'", "").split(",")[0]
 
         main_win.window(best_match='Save As Type:ComboBox').select(
             'csv (*.csv)')
@@ -100,6 +104,7 @@ def download_new_data():
     except Exception as e:
         print(e)
         main_win.Close.click()
+        raise e
 
     return file_dir
 
@@ -149,7 +154,7 @@ def parse_csv(file_path):
 def upload_data_to_influxdb(data_points):
     config = dotenv_values(".env")
 
-    print(f"uploading {len(data_points)} points to influxdb")
+    print(f"uploading {len(data_points)} points to influxdb {config['url']}")
 
     client = InfluxDBClient(
         url=config['url'],
@@ -167,6 +172,7 @@ def upload_data_to_influxdb(data_points):
 def process_new_data(data_dir):
     if data_dir is None:
         return
+    print(f"looking for csv files in {data_dir}")
 
     for entry in os.scandir(data_dir):
         if not entry.name.endswith('.csv'):
@@ -184,7 +190,7 @@ def process_new_data(data_dir):
 
 def main():
     data_dir = download_new_data()
-    # data_dir = 'C:\\Users\\zacau\\Documents\\mr107-radon-measurements'
+    #data_dir = 'C:\\Users\\zacau\\Documents\\mr107-radon-measurements'
     process_new_data(data_dir)
 
 
